@@ -14,13 +14,23 @@ struct Object {
     var coinbase = [CoinBase]()
     var bittrex = [Bittrex]()
 }
-class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+class ViewController: UIViewController, UITableViewDataSource, UITableViewDelegate, UIGestureRecognizerDelegate {
     
     @IBOutlet weak var showAll: UIButton!
     @IBOutlet weak var showEUR: UIButton!
     @IBOutlet weak var showUSD: UIButton!
     @IBOutlet weak var tableView: UITableView!
     
+    var headerSelection : UITableViewHeaderFooterView!
+    var hiddenSection = [false, false]
+    var mode : String = "Night"
+    
+    //  Boolean varibles to filter
+    var isShowedUSD = true
+    var isShowedEUR = true
+    
+    //  Objects Array to save JSON data from multiple exchange markets
     var objectsArray = [Object]()
     var object = Object()
     
@@ -46,10 +56,6 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var LTCUSD_sell = "https://api.coinbase.com/v2/prices/LTC-USD/sell"
     var LTCEUR_sell = "https://api.coinbase.com/v2/prices/LTC-EUR/sell"
     
-    //  Coin Base variables to store JSON data
-    var coinBase_USD = [CoinBase]();     var coinBaseBuy_USD = [CoinBase]();      var coinBaseSell_USD = [CoinBase]();
-    var coinBase_EUR = [CoinBase]();     var coinBaseBuy_EUR = [CoinBase]();      var coinBaseSell_EUR = [CoinBase]()
-    
     //  Bittrex links to download data
     var Bittrex_BTCUSD = "https://bittrex.com/api/v1.1/public/getticker?market=USDT-BTC"
     var Bittrex_ETHUSD = "https://bittrex.com/api/v1.1/public/getticker?market=USDT-ETH"
@@ -63,55 +69,34 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     var Bittrex_OMGUSD = "https://bittrex.com/api/v1.1/public/getticker?market=USDT-OMG"
     var Bittrex_DASHUSD = "https://bittrex.com/api/v1.1/public/getticker?market=USDT-DASH"
     var Bittrex_XMRUSD = "https://bittrex.com/api/v1.1/public/getticker?market=USDT-XMR"
+    
     var Bittrex_Currencies = ["BTC/USD","ETH/USD","XRP/USD","BCC/USD","LTC/USD","NEO/USD","ETC/USD","BTG/USD","ZEC/USD","OMG/USD","DASH/USD","XMR/USD",]
     var copied_Currencies = ["BTC/USD","ETH/USD","XRP/USD","BCC/USD","LTC/USD","NEO/USD","ETC/USD","BTG/USD","ZEC/USD","OMG/USD","DASH/USD","XMR/USD",]
     
-    var isShowedUSD = true
-    var isShowedEUR = true
-
-    
     override func viewDidLoad() {
         super.viewDidLoad()
-        designButtons()
+        backgroundModeColor()
+        
         tableView.delegate = self
         tableView.dataSource = self
         
-        CoinbaseData()
-        BittrexData()
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 3){
-//            self.tableView.reloadData()
-//        }
+        DispatchQueue.global(qos: .userInitiated).sync {
+            self.CoinbaseData()
+            self.BittrexData()
+        }
         // Do any additional setup after loading the view, typically from a nib.
     }
-    
+
+/**********************************************************************************************/
+/*              Pulling Data from market exchange APIs                                        */
+/*    - https://api.coinbase.com/                                                             */
+/*    - https://bittrex.com/                                                                  */
+/*      To be continued.......                                                                */
+/**********************************************************************************************/
+    //  Download currency pairs price data from Coin Base
     func CoinbaseData(){
         object.market = "Coin Base";
-//        DispatchQueue.main.async {
-//            self.getCoinBaseData(urlLink: self.BTCUSD, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.BTCUSD_buy, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.BTCUSD_sell, currencyType: "USD")
-//
-//            self.getCoinBaseData(urlLink: self.ETHUSD, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.ETHUSD_buy, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.ETHUSD_sell, currencyType: "USD")
-//
-//            self.getCoinBaseData(urlLink: self.LTCUSD, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.LTCUSD_buy, currencyType: "USD")
-//            self.getCoinBaseData(urlLink: self.LTCUSD_sell, currencyType: "USD")
-//
-//            self.getCoinBaseData(urlLink: self.BTCEUR, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.BTCEUR_buy, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.BTCEUR_sell, currencyType: "EUR")
-//
-//            self.getCoinBaseData(urlLink: self.ETHEUR, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.ETHEUR_buy, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.ETHEUR_sell, currencyType: "EUR")
-//
-//            self.getCoinBaseData(urlLink: self.LTCEUR, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.LTCEUR_buy, currencyType: "EUR")
-//            self.getCoinBaseData(urlLink: self.LTCEUR_sell, currencyType: "EUR")
-//
-//        }
+
         getCoinBaseData(urlLink: BTCUSD, currencyType: "USD")
         getCoinBaseData(urlLink: BTCUSD_buy, currencyType: "USD")
         getCoinBaseData(urlLink: BTCUSD_sell, currencyType: "USD")
@@ -123,7 +108,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         getCoinBaseData(urlLink: LTCUSD, currencyType: "USD")
         getCoinBaseData(urlLink: LTCUSD_buy, currencyType: "USD")
         getCoinBaseData(urlLink: LTCUSD_sell, currencyType: "USD")
-        
+
         getCoinBaseData(urlLink: BTCEUR, currencyType: "EUR")
         getCoinBaseData(urlLink: BTCEUR_buy, currencyType: "EUR")
         getCoinBaseData(urlLink: BTCEUR_sell, currencyType: "EUR")
@@ -139,7 +124,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         objectsArray.append(object)
         object.market = ""; object.coinbase.removeAll()
     }
-    //  Download JSON data from CoinBase
+    //  Get JSON data from CoinBase
     func getCoinBaseData(urlLink : String, currencyType : String){
         let request = URLRequest(url: NSURL(string: urlLink)! as URL)
         do {
@@ -149,10 +134,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             let jsonDecoder = JSONDecoder()
             if (currencyType == "USD"){
                 let jsonData = try jsonDecoder.decode(CoinBase.self, from: data)
+                print("Data: \(jsonData.data!)")
                 self.object.coinbase.append(jsonData)
             }
             else if (currencyType == "EUR"){
                 let jsonData = try jsonDecoder.decode(CoinBase.self, from: data)
+                print("Data: \(jsonData.data!)")
                 self.object.coinbase.append(jsonData)
             }
             DispatchQueue.main.async {
@@ -164,22 +151,10 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         }
     }
     
+    //  Download currency pairs price data from Bittrex
     func BittrexData(){
         object.market = "Bittrex"
-//        DispatchQueue.main.async {
-//            self.getBittrexData(urlLink: self.Bittrex_BTCUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_ETHUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_XRPUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_BCCUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_LTCUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_NEOUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_ETCUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_BTGUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_ZECUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_OMGUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_DASHUSD)
-//            self.getBittrexData(urlLink: self.Bittrex_XMRUSD)
-//        }
+        
         getBittrexData(urlLink: Bittrex_BTCUSD)
         getBittrexData(urlLink: Bittrex_ETHUSD)
         getBittrexData(urlLink: Bittrex_XRPUSD)
@@ -196,7 +171,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         objectsArray.append(object)
         object.market = ""; object.bittrex.removeAll()
     }
-    //  Download JSON data from Bittrex
+    //  Get JSON data from Bittrex
     func getBittrexData(urlLink: String) {
         let request = URLRequest(url: NSURL(string: urlLink)! as URL)
         do{
@@ -204,6 +179,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
             let data = try NSURLConnection.sendSynchronousRequest(request, returning: response)
             let jsonDecoder = JSONDecoder()
             let jsonData = try jsonDecoder.decode(Bittrex.self, from: data)
+            print("Data: \(jsonData.result!)")
             jsonData.message = Bittrex_Currencies[0]
             self.object.bittrex.append(jsonData)
             Bittrex_Currencies.remove(at: 0)
@@ -214,46 +190,72 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         catch{
             print(error)
         }
-//        let url = URL(string: urlLink)
-//        let task = URLSession.shared.dataTask(with: url!) { (data, response, error) in
-//            do{
-//                let jsonDecoder = JSONDecoder()
-//                let jsonData = try jsonDecoder.decode(Bittrex.self, from: data!)
-//                jsonData.message = self.Bittrex_Currencies[0]
-//                self.object.bittrex.append(jsonData)
-//                self.Bittrex_Currencies.remove(at: 0)
-//                DispatchQueue.main.async {
-//                    self.tableView.reloadData()
-//                }
-//            }
-//            catch{
-//                print(error)
-//            }
-//        }
-//        task.resume()
     }
     
-    @IBAction func test(_ sender: Any) {
+    func refresh(){
         objectsArray.removeAll()
         Bittrex_Currencies = copied_Currencies
         CoinbaseData()
         BittrexData()
     }
     
+    @IBAction func test(_ sender: Any) {
+        refresh()
+    }
+
+/**********************************************************************************************/
+/*              Set Up Table View to be displayed                                             */
+/*    - Number of section in table view                                                       */
+/*    - Number of row for each section                                                        */
+/*    - Header section's title:  height, text, tap gesture to expanded/collapsed section      */
+/*    - Information to be displayed on each cell row of each section                          */
+/**********************************************************************************************/
     
-    //  Set up Table View to be displayed
+    //  Function to return number of section in Table View
     func numberOfSections(in tableView: UITableView) -> Int {
         return objectsArray.count
     }
+    
+    //  Function to set up header's height in section
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        return 40
+    }
+    
+    //  Function to display Header's title and configure tap gesture recognizer
+    //  User tap/touch on specific header's title, then section will be expanded/collapsed
+    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+        headerSelection = UITableViewHeaderFooterView()
+        headerSelection.textLabel?.text = objectsArray[section].market
+        headerTableViewModeColor()
+        headerSelection.tag = section
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(headerTapHandling))
+        tapRecognizer.delegate = self
+        tapRecognizer.numberOfTapsRequired = 1
+        tapRecognizer.numberOfTouchesRequired = 1
+        headerSelection.addGestureRecognizer(tapRecognizer)
+        return headerSelection
+    }
+    @objc func headerTapHandling(tap: UIGestureRecognizer){
+        let section = tap.view!.tag
+        self.hiddenSection[section] = !self.hiddenSection[section]
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
+    }
+    
+    //  Function to configure number of row for each section
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        if (isShowedUSD && !isShowedEUR) { return coinBase_USD.count}
-//        else if (!isShowedUSD && isShowedEUR) { return coinBase_EUR.count}
-//        return coinBase_USD.count + coinBase_EUR.count
-        var numbOfRow = 1
-        if (objectsArray[section].market == "Coin Base") { numbOfRow = objectsArray[section].coinbase.count / 3}
-        else if (objectsArray[section].market == "Bittrex") { numbOfRow = objectsArray[section].bittrex.count}
+        var numbOfRow = 0
+        if (objectsArray[section].market == "Coin Base" && hiddenSection[0]) {
+            numbOfRow = objectsArray[section].coinbase.count / 3
+        }
+        else if (objectsArray[section].market == "Bittrex" && hiddenSection[1]) {
+            numbOfRow = objectsArray[section].bittrex.count
+        }
         return numbOfRow
     }
+    
+    //  Function to implement information to be displayed on each cell row
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell")
         let typeLbl = cell?.viewWithTag(1) as! UILabel
@@ -265,27 +267,7 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         let askLbl = cell?.viewWithTag(7) as! UILabel
         let askPriceLbl = cell?.viewWithTag(8) as! UILabel
         
-//        self.tableView.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.1)
-//        cell?.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.02)
-//        self.view.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.1)
-        
-        typeLbl.textColor = UIColor.blue
-        currentPriceLbl.textColor = UIColor.blue
-        bidLbl.textColor = UIColor.blue
-        askLbl.textColor = UIColor.blue
-        bidPriceLbl.textColor = UIColor.blue
-        askPriceLbl.textColor = UIColor.blue
-//        typeLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-//        currentPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-//        bidLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-//        askLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-//        bidPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-//        askPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
-        
-//        modifiedButton(button: showAll, mode: "Night")
-//        modifiedButton(button: showEUR, mode: "Night")
-//        modifiedButton(button: showUSD, mode: "Night")
-        if (objectsArray[indexPath.section].market == "Coin Base"){
+        if (objectsArray[indexPath.section].market == "Coin Base" && hiddenSection[0]){
             if (isShowedUSD && indexPath.row < (objectsArray[indexPath.section].coinbase.count / 2)){
                 typeLbl.text = objectsArray[indexPath.section].coinbase[3 * indexPath.row].data.base + "/" + objectsArray[indexPath.section].coinbase[3 * indexPath.row].data.currency
                 currentPriceLbl.text = objectsArray[indexPath.section].coinbase[3 * indexPath.row].data.amount
@@ -300,39 +282,78 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
                 askPriceLbl.text = objectsArray[indexPath.section].coinbase[3 * indexPath.row - modifyIndex + 2].data.amount
             }
         }
-        else if (objectsArray[indexPath.section].market == "Bittrex"){
+        else if (objectsArray[indexPath.section].market == "Bittrex" && hiddenSection[1]){
             typeLbl.text = objectsArray[indexPath.section].bittrex[indexPath.row].message
             currentPriceLbl.text = String(format: "%.3f", objectsArray[indexPath.section].bittrex[indexPath.row].result.Last)
             bidPriceLbl.text = String(format: "%.3f", objectsArray[indexPath.section].bittrex[indexPath.row].result.Bid)
             askPriceLbl.text = String(format: "%.3f", objectsArray[indexPath.section].bittrex[indexPath.row].result.Ask)
         }
-//        if (isShowedUSD && coinBase_USD.count != 0 && indexPath.row < coinBase_USD.count){
-//            typeLbl.text = coinBase_USD[indexPath.row].data.base + "/" + coinBase_USD[indexPath.row].data.currency
-//            currentPriceLbl.text = coinBase_USD[indexPath.row].data.amount
-//            bidPriceLbl.text = coinBaseBuy_USD[indexPath.row].data.amount
-//            askPriceLbl.text = coinBaseSell_USD[indexPath.row].data.amount
-//        }
-//        else if (isShowedEUR && coinBase_EUR.count != 0){
-//            typeLbl.text = coinBase_EUR[indexPath.row - coinBase_USD.count].data.base + "/" + coinBase_EUR[indexPath.row - coinBase_USD.count].data.currency
-//            currentPriceLbl.text = coinBase_EUR[indexPath.row - coinBase_USD.count].data.amount
-//            bidPriceLbl.text = coinBaseBuy_EUR[indexPath.row - coinBase_USD.count].data.amount
-//            askPriceLbl.text = coinBaseBuy_EUR[indexPath.row - coinBase_USD.count].data.amount
-//        }
+        
+        tableViewCellModeColor(typeLbl: typeLbl, currentPriceLbl: currentPriceLbl, bidLbl: bidLbl, askLbl: askLbl, askPriceLbl: askPriceLbl, bidPriceLbl: bidPriceLbl, cell: cell!)
+        
         return cell!
     }
     
-    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        return objectsArray[section].market
+    func backgroundModeColor(){
+        if (mode == "Day"){
+            self.tableView.backgroundColor = UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 0.1)
+            self.view.backgroundColor = UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 0.1)
+        }
+        else if (mode == "Night"){
+            self.tableView.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.1)
+            self.view.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.1)
+        }
+        designButtons()
     }
-   
     
+/**********************************************************************************************/
+/*              Set up UI Mode Color (Day/Night Mode)                                         */
+/*    - buttons, background, cells, headers, texts                                            */
+/**********************************************************************************************/
+    func tableViewCellModeColor(typeLbl : UILabel, currentPriceLbl : UILabel, bidLbl : UILabel, askLbl : UILabel, askPriceLbl : UILabel, bidPriceLbl : UILabel, cell : UITableViewCell) {
+        if (mode == "Day"){
+            cell.backgroundColor = UIColor(red: 255/255, green: 255/255, blue: 255/255, alpha: 0.02)
+            typeLbl.textColor = UIColor.blue
+            currentPriceLbl.textColor = UIColor.blue
+            bidLbl.textColor = UIColor.blue
+            askLbl.textColor = UIColor.blue
+            bidPriceLbl.textColor = UIColor.blue
+            askPriceLbl.textColor = UIColor.blue
+        }
+        else if (mode == "Night"){
+            cell.backgroundColor = UIColor(red: 204/255, green: 209/255, blue: 255/255, alpha: 0.02)
+            typeLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+            currentPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+            bidLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+            askLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+            bidPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+            askPriceLbl.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
+        }
+    }
+    
+    func headerTableViewModeColor(){
+        headerSelection.layer.borderWidth = 1
+        if (mode == "Day"){
+            headerSelection.contentView.backgroundColor = UIColor(red: 192/255, green: 192/255, blue: 192/255, alpha: 1.0)
+            headerSelection.layer.borderColor = UIColor.black.cgColor
+            headerSelection.textLabel?.font = UIFont.boldSystemFont(ofSize: 30)
+            headerSelection.textLabel?.textColor = UIColor.black
+        }
+        else if (mode == "Night"){
+            headerSelection.contentView.backgroundColor = UIColor(red: 102/255, green: 178/255, blue: 255/255, alpha: 1.0)
+            headerSelection.layer.borderColor = UIColor.lightGray.cgColor
+            headerSelection.textLabel?.font = UIFont.boldSystemFont(ofSize: 30)
+            headerSelection.textLabel?.textColor = UIColor.black
+        }
+    }
+
     //  Design buttons "All", "USD", "EUR" shape, border, color
     func designButtons(){
-        modifiedButton(button: showAll, mode: "Day")
-        modifiedButton(button: showEUR, mode: "Day")
-        modifiedButton(button: showUSD, mode: "Day")
+        modifiedButton(button: showAll)
+        modifiedButton(button: showEUR)
+        modifiedButton(button: showUSD)
     }
-    func modifiedButton(button: UIButton, mode : String){
+    func modifiedButton(button: UIButton){
         if (mode == "Day"){
             button.layer.borderColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0).cgColor
             button.titleLabel?.textColor = UIColor(red: 0/255, green: 128/255, blue: 255/255, alpha: 1.0)
